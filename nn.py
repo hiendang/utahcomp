@@ -196,9 +196,9 @@ net2 = NeuralNet(
 		('output', layers.DenseLayer),
 		],
 	input_shape=(None, 1, 91, 91),
-	conv1_num_filters=32, conv1_filter_size=(3, 3), pool1_pool_size=(2, 2),
-	conv2_num_filters=64, conv2_filter_size=(2, 2), pool2_pool_size=(2, 2),
-	conv3_num_filters=128, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
+	conv1_num_filters=16, conv1_filter_size=(3, 3), pool1_pool_size=(2, 2),
+	conv2_num_filters=32, conv2_filter_size=(2, 2), pool2_pool_size=(2, 2),
+	conv3_num_filters=64, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
 	hidden4_num_units=500, hidden5_num_units=500,
 	output_num_units=1, output_nonlinearity=None,
 
