@@ -212,53 +212,53 @@ net2 = NeuralNet(
 	)
 
 net = NeuralNet(
-    layers=[
-        ('input', layers.InputLayer),
-        ('conv1', Conv2DLayer),
-        ('pool1', MaxPool2DLayer),
-        ('dropout1', layers.DropoutLayer),
-        ('conv2', Conv2DLayer),
-        ('pool2', MaxPool2DLayer),
-        ('dropout2', layers.DropoutLayer),
-        ('conv3', Conv2DLayer),
-        ('pool3', MaxPool2DLayer),
-        ('dropout3', layers.DropoutLayer),
-        ('hidden4', layers.DenseLayer),
-        ('dropout4', layers.DropoutLayer),
-        ('hidden5', layers.DenseLayer),
+	layers=[
+		('input', layers.InputLayer),
+		('conv1', Conv2DLayer),
+		('pool1', MaxPool2DLayer),
+		('dropout1', layers.DropoutLayer),
+		('conv2', Conv2DLayer),
+		('pool2', MaxPool2DLayer),
+		('dropout2', layers.DropoutLayer),
+		('conv3', Conv2DLayer),
+		('pool3', MaxPool2DLayer),
+		('dropout3', layers.DropoutLayer),
+		('hidden4', layers.DenseLayer),
+		('dropout4', layers.DropoutLayer),
+		('hidden5', layers.DenseLayer),
 		('dropout5',layers.DropoutLayer)
-        ('output', layers.DenseLayer),
-        ],
-    input_shape=(None, 1, 96, 96),
-    conv1_num_filters=8, conv1_filter_size=(3, 3), pool1_pool_size=(2, 2),
-    dropout1_p=0.1,
-    conv2_num_filters=16, conv2_filter_size=(2, 2), pool2_pool_size=(2, 2),
-    dropout2_p=0.2,
-    conv3_num_filters=32, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
-    dropout3_p=0.3,
-    hidden4_num_units=500,
-    dropout4_p=0.5,
-    hidden5_num_units=500,
+		('output', layers.DenseLayer),
+		],
+	input_shape=(None, 1, 96, 96),
+	conv1_num_filters=8, conv1_filter_size=(3, 3), pool1_pool_size=(2, 2),
+	dropout1_p=0.1,
+	conv2_num_filters=16, conv2_filter_size=(2, 2), pool2_pool_size=(2, 2),
+	dropout2_p=0.2,
+	conv3_num_filters=32, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
+	dropout3_p=0.3,
+	hidden4_num_units=500,
+	dropout4_p=0.5,
+	hidden5_num_units=500,
 	dropout5_p=0.4,
-    output_num_units=1, output_nonlinearity=None,
+	output_num_units=1, output_nonlinearity=None,
 
-    update_learning_rate=theano.shared(float32(0.03)),
-    update_momentum=theano.shared(float32(0.9)),
+	update_learning_rate=theano.shared(float32(0.03)),
+	update_momentum=theano.shared(float32(0.9)),
 
-    regression=True,
-    batch_iterator_train=FlipBatchIterator(batch_size=128),
-    on_epoch_finished=[
-        AdjustVariable('update_learning_rate', start=0.03, stop=0.0001),
-        AdjustVariable('update_momentum', start=0.9, stop=0.999),
-        EarlyStopping(patience=200),
-        ],
-    max_epochs=3000,
-    verbose=1,
-    )
+	regression=True,
+	batch_iterator_train=FlipBatchIterator(batch_size=128),
+	on_epoch_finished=[
+		AdjustVariable('update_learning_rate', start=0.03, stop=0.0001),
+		AdjustVariable('update_momentum', start=0.9, stop=0.999),
+		EarlyStopping(patience=200),
+		],
+	max_epochs=3000,
+	verbose=1,
+	)
 if __name__ == '__main__':
 	X, y , Xtest= load2d()  # load 2-d data
 	net.fit(X.astype(theano.config.floatX), y.reshape(-1,1).astype(theano.config.floatX))
 	
 	with open('net.pickle', 'wb') as f:
-        pickle.dump(net, f, -1)
+		pickle.dump(net, f, -1)
 	
