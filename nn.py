@@ -5,8 +5,7 @@ import sys
 
 from matplotlib import pyplot
 from lasagne import layers
-from nolearn.lasagne import BatchIterator
-from nolearn.lasagne import NeuralNet
+from nolearn.lasagne import BatchIterator,NeuralNet,TrainSplit
 from pandas import DataFrame
 from pandas.io.parsers import read_csv
 from sklearn.utils import shuffle
@@ -208,7 +207,7 @@ net2 = NeuralNet(
 	regression=True,
 	max_epochs=1000,
 	verbose=1,
-	eval_size=0.2
+	train_split=TrainSplit(eval_size=0.2)
 	)
 
 net = NeuralNet(
@@ -229,7 +228,7 @@ net = NeuralNet(
 		('dropout5',layers.DropoutLayer),
 		('output', layers.DenseLayer),
 		],
-	input_shape=(None, 1, 96, 96),
+	input_shape=(None, 1, 91, 91),
 	conv1_num_filters=8, conv1_filter_size=(3, 3), pool1_pool_size=(2, 2),
 	dropout1_p=0.1,
 	conv2_num_filters=16, conv2_filter_size=(2, 2), pool2_pool_size=(2, 2),
@@ -254,6 +253,7 @@ net = NeuralNet(
 		],
 	max_epochs=3000,
 	verbose=1,
+	train_split=TrainSplit(eval_size=0.2),
 	)
 if __name__ == '__main__':
 	X, y , Xtest= load2d()  # load 2-d data
