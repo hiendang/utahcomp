@@ -226,7 +226,7 @@ net = NeuralNet(
 		('hidden4', layers.DenseLayer),
 		('dropout4', layers.DropoutLayer),
 		('hidden5', layers.DenseLayer),
-		('dropout5',layers.DropoutLayer)
+		('dropout5',layers.DropoutLayer),
 		('output', layers.DenseLayer),
 		],
 	input_shape=(None, 1, 96, 96),
