@@ -15,7 +15,7 @@ from scipy import misc	  # import for image reading
 import numpy as np		  # import because you're a data scientist
 import urllib			   # urllib used for downloading 
 import hashlib			  # used for md5 checking
-
+from lasagne.nonlinearities import *
 try:
 	from lasagne.layers.cuda_convnet import Conv2DCCLayer as Conv2DLayer
 	from lasagne.layers.cuda_convnet import MaxPool2DCCLayer as MaxPool2DLayer
@@ -24,7 +24,7 @@ except ImportError:
 	MaxPool2DLayer = layers.MaxPool2DLayer
 
 sys.setrecursionlimit(10000)  # for pickle...
-np.random.seed(42)
+np.random.seed(42223)
 
 def image_smash(filename):   # Taken an image, flatten it, and smash it
 	# This function takes an image filename, loads it into a matrix, smashes it to 1D row
@@ -126,18 +126,21 @@ def plot_weights(weights):
 	pyplot.show()
 
 class FlipBatchIterator(BatchIterator):
-	flip_indices = [
-		(0, 2), (1, 3),
-		(4, 8), (5, 9), (6, 10), (7, 11),
-		(12, 16), (13, 17), (14, 18), (15, 19),
-		(22, 24), (23, 25),
-		]
+	#flip_indices = [
+	#	(0, 2), (1, 3),
+	#	(4, 8), (5, 9), (6, 10), (7, 11),
+	#	(12, 16), (13, 17), (14, 18), (15, 19),
+	#	(22, 24), (23, 25),
+	#	]
 	def transform(self, Xb, yb):
 		Xb, yb = super(FlipBatchIterator, self).transform(Xb, yb)
 		# Flip half of the images in this batch at random:
 		bs = Xb.shape[0]
-		indices = np.random.choice(bs, bs / 2, replace=False)
-		Xb[indices] = Xb[indices, :, :, ::-1]
+		indices2 = np.random.choice(bs, bs / 3, replace=False)
+		Xb[indices2] = Xb[indices2, :, :, ::-1]
+		indices3 = np.random.choice(bs, bs / 3, replace=False)
+		Xb[indices3] = Xb[indices3, :, ::-1, :]
+		#X3 = Xb[indices3, :, ::-1, :]
 		#if yb is not None:
 		#	# Horizontal flip of all x coordinates:
 		#	yb[indices, ::2] = yb[indices, ::2] * -1
@@ -145,6 +148,10 @@ class FlipBatchIterator(BatchIterator):
 		#	for a, b in self.flip_indices:
 		#		yb[indices, a], yb[indices, b] = (
 		#			yb[indices, b], yb[indices, a])
+		#Xb = np.vstack((Xb,X2,X3))
+		#yb = np.hstack((yb,yb[indices2],yb[indices3]))
+		#print Xb.shape
+		#print yb.shape
 		return Xb, yb
 
 
@@ -229,36 +236,37 @@ net = NeuralNet(
 		('output', layers.DenseLayer),
 		],
 	input_shape=(None, 1, 91, 91),
-	conv1_num_filters=8, conv1_filter_size=(3, 3), pool1_pool_size=(2, 2),
-	dropout1_p=0.1,
-	conv2_num_filters=16, conv2_filter_size=(2, 2), pool2_pool_size=(2, 2),
-	dropout2_p=0.2,
-	conv3_num_filters=32, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
+	conv1_num_filters=4, conv1_filter_size=(3, 3), pool1_pool_size=(2, 2),
+	dropout1_p=0.2,
+	conv2_num_filters=8, conv2_filter_size=(3, 3), pool2_pool_size=(2, 2),
+	dropout2_p=0.3,
+	conv3_num_filters=16, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
 	dropout3_p=0.3,
-	hidden4_num_units=500,
+	hidden4_num_units=200,
+	hidden4_nonlinearity=leaky_rectify,
 	dropout4_p=0.5,
-	hidden5_num_units=500,
-	dropout5_p=0.4,
-	output_num_units=1, output_nonlinearity=None,
+	hidden5_num_units=120,
+	dropout5_p=0.35,
+	output_num_units=2, output_nonlinearity=softmax,
 
-	update_learning_rate=theano.shared(float32(0.03)),
+	update_learning_rate=theano.shared(float32(0.02)),
 	update_momentum=theano.shared(float32(0.9)),
 
-	regression=True,
+#	regression=True,
 	batch_iterator_train=FlipBatchIterator(batch_size=128),
 	on_epoch_finished=[
-		AdjustVariable('update_learning_rate', start=0.03, stop=0.0001),
+		AdjustVariable('update_learning_rate', start=0.02, stop=0.0001),
 		AdjustVariable('update_momentum', start=0.9, stop=0.999),
-		EarlyStopping(patience=200),
+		EarlyStopping(patience=80),
 		],
-	max_epochs=3000,
+	max_epochs=2000,
 	verbose=1,
 	train_split=TrainSplit(eval_size=0.2),
 	)
 if __name__ == '__main__':
 	X, y , Xtest= load2d()  # load 2-d data
-	net.fit(X.astype(theano.config.floatX), y.reshape(-1,1).astype(theano.config.floatX))
-	
-	with open('net.pickle', 'wb') as f:
-		pickle.dump(net, f, -1)
+	net.fit(X.astype(theano.config.floatX), y.astype(np.int32).reshape(-1,))
+	ypred = net.predict_proba(Xtest.astype(theano.config.floatX))
+	with open('net.res.pickle', 'wb') as f:
+		pickle.dump(ypred, f)
 	
