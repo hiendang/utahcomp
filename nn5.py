@@ -181,7 +181,7 @@ class EarlyStopping(object):
 			raise StopIteration()
 
 
-def build_nn4():
+def build_nn5():
 	net = NeuralNet(
 		layers=[
 			('input', layers.InputLayer),
@@ -229,7 +229,7 @@ def build_nn4():
 		)
 	return net
 
-def nn_features(X,y,Xtest,model=build_nn4,random_state=100,n_folds=4):
+def nn_features(X,y,Xtest,model=build_nn5,random_state=100,n_folds=4):
 	seed = random_state	
 	from lasagne.layers import noise
 	from theano.sandbox.rng_mrg import MRG_RandomStreams
@@ -257,9 +257,10 @@ def nn_features(X,y,Xtest,model=build_nn4,random_state=100,n_folds=4):
 	return ypred_train, ypred_test*1./n_folds
 
 if __name__ == '__main__':
+	print __file__
 	X, y , Xtest= load2d()  # load 2-d data
-	rtrain,rtest = nn_features(X,y,Xtest,model=build_nn4,random_state=291,n_folds=5)
+	rtrain,rtest = nn_features(X,y,Xtest,model=build_nn5,random_state=291,n_folds=5)
 	print 'roc auc score is %f '%(roc_auc_score(y,rtrain))
-	with open('net4.res.pickle', 'wb') as f:
+	with open('net5.res.pickle', 'wb') as f:
 		pickle.dump((rtrain,rtest), f)
 	
