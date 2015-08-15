@@ -112,7 +112,7 @@ def load2d():
 	X, y, Xtest= load()
 	X = X.reshape(-1, 1, 91, 91)
 	Xtest = Xtest.reshape(-1,1,91,91)
-	return X, y, Xtest
+	return X.astype(theano.config.floatX), y.reshape(-1,).astype(np.int32), Xtest.astype(theano.config.floatX)
 
 def plot_sample(x, y, axis):
 	img = x.reshape(91, 91)
@@ -132,12 +132,6 @@ def plot_weights(weights):
 	pyplot.show()
 
 class FlipBatchIterator(BatchIterator):
-	#flip_indices = [
-	#	(0, 2), (1, 3),
-	#	(4, 8), (5, 9), (6, 10), (7, 11),
-	#	(12, 16), (13, 17), (14, 18), (15, 19),
-	#	(22, 24), (23, 25),
-	#	]
 	def transform(self, Xb, yb):
 		Xb, yb = super(FlipBatchIterator, self).transform(Xb, yb)
 		# Flip half of the images in this batch at random:
@@ -146,18 +140,6 @@ class FlipBatchIterator(BatchIterator):
 		Xb[indices2] = Xb[indices2, :, :, ::-1]
 		indices3 = np.random.choice(bs, bs / 3, replace=False)
 		Xb[indices3] = Xb[indices3, :, ::-1, :]
-		#X3 = Xb[indices3, :, ::-1, :]
-		#if yb is not None:
-		#	# Horizontal flip of all x coordinates:
-		#	yb[indices, ::2] = yb[indices, ::2] * -1
-		#	# Swap places, e.g. left_eye_center_x -> right_eye_center_x
-		#	for a, b in self.flip_indices:
-		#		yb[indices, a], yb[indices, b] = (
-		#			yb[indices, b], yb[indices, a])
-		#Xb = np.vstack((Xb,X2,X3))
-		#yb = np.hstack((yb,yb[indices2],yb[indices3]))
-		#print Xb.shape
-		#print yb.shape
 		return Xb, yb
 
 
@@ -202,34 +184,7 @@ class EarlyStopping(object):
 			nn.load_params_from(self.best_weights)
 			raise StopIteration()
 
-net2 = NeuralNet(
-	layers=[
-		('input', layers.InputLayer),
-		('conv1', layers.Conv2DLayer),
-		('pool1', layers.MaxPool2DLayer),
-		('conv2', layers.Conv2DLayer),
-		('pool2', layers.MaxPool2DLayer),
-		('conv3', layers.Conv2DLayer),
-		('pool3', layers.MaxPool2DLayer),
-		('hidden4', layers.DenseLayer),
-		('hidden5', layers.DenseLayer),
-		('output', layers.DenseLayer),
-		],
-	input_shape=(None, 1, 91, 91),
-	conv1_num_filters=32, conv1_filter_size=(3, 3), pool1_pool_size=(2, 2),
-	conv2_num_filters=64, conv2_filter_size=(2, 2), pool2_pool_size=(2, 2),
-	conv3_num_filters=128, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
-	hidden4_num_units=500, hidden5_num_units=500,
-	output_num_units=1, output_nonlinearity=None,
 
-	update_learning_rate=0.01,
-	update_momentum=0.9,
-
-	regression=True,
-	max_epochs=1000,
-	verbose=1,
-	train_split=TrainSplit(eval_size=0.2)
-	)
 def build_nn4():
 	net = NeuralNet(
 		layers=[
@@ -308,8 +263,6 @@ def nn_features(X,y,Xtest,model=build_nn4,random_state=100,n_folds=4):
 if __name__ == '__main__':
 	X, y , Xtest= load2d()  # load 2-d data
 	rtrain,rtest = nn_features(X,y,Xtest,model=build_nn4,random_state=100,n_folds=5)
-	#net.fit(X.astype(theano.config.floatX), y.astype(np.int32).reshape(-1,))
-	#ypred = net.predict_proba(Xtest.astype(theano.config.floatX))
 	print 'roc auc score is %f '%(roc_auc_score(y,rtrain))
 	with open('net4.res.pickle', 'wb') as f:
 		pickle.dump((rtrain,rtest), f)
