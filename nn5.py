@@ -25,6 +25,7 @@ from sklearn.utils import shuffle
 try:
 	from lasagne.layers.cuda_convnet import Conv2DCCLayer as Conv2DLayer
 	from lasagne.layers.cuda_convnet import MaxPool2DCCLayer as MaxPool2DLayer
+	print 'Import successed [Using cuda Convolutional Layers]'
 except ImportError:
 	Conv2DLayer = layers.Conv2DLayer
 	MaxPool2DLayer = layers.MaxPool2DLayer
