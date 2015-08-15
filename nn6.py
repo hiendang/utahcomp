@@ -184,7 +184,7 @@ class EarlyStopping(object):
 			raise StopIteration()
 
 
-def build_nn5():
+def build_nn6():
 	net = NeuralNet(
 		layers=[
 			('input', layers.InputLayer),
@@ -204,16 +204,16 @@ def build_nn5():
 			('output', layers.DenseLayer),
 			],
 		input_shape=(None, 1, 91, 91),
-		conv1_num_filters=2, conv1_filter_size=(3, 3), pool1_pool_size=(2, 2),
-		dropout1_p=0.2,
-		conv2_num_filters=4, conv2_filter_size=(3, 3), pool2_pool_size=(2, 2),
-		dropout2_p=0.3,
-		conv3_num_filters=8, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
+		conv1_num_filters=6, conv1_filter_size=(4, 4), pool1_pool_size=(2, 2),
+		dropout1_p=0.15,
+		conv2_num_filters=12, conv2_filter_size=(2, 2), pool2_pool_size=(2, 1),
+		dropout2_p=0.25,
+		conv3_num_filters=24, conv3_filter_size=(2, 2), pool3_pool_size=(1, 2),
 		dropout3_p=0.3,
-		hidden4_num_units=150,
-		hidden4_nonlinearity=leaky_rectify,
+		hidden4_num_units=200,
+		hidden4_nonlinearity=very_leaky_rectify,
 		dropout4_p=0.5,
-		hidden5_num_units=100,
+		hidden5_num_units=120,
 		dropout5_p=0.35,
 		output_num_units=2, output_nonlinearity=softmax,
 
@@ -226,13 +226,13 @@ def build_nn5():
 			AdjustVariable('update_learning_rate', start=0.025, stop=0.0001),
 			AdjustVariable('update_momentum', start=0.9, stop=0.999),			
 			],
-		max_epochs=2000,
+		max_epochs=1500,
 		verbose=0,
 		train_split=TrainSplit(eval_size=0.0),
 		)
 	return net
 
-def nn_features(X,y,Xtest,model=build_nn5,random_state=100,n_folds=4):
+def nn_features(X,y,Xtest,model=build_nn6,random_state=100,n_folds=4):
 	seed = random_state	
 	from lasagne.layers import noise
 	from theano.sandbox.rng_mrg import MRG_RandomStreams
@@ -261,7 +261,7 @@ def nn_features(X,y,Xtest,model=build_nn5,random_state=100,n_folds=4):
 if __name__ == '__main__':
 	print __file__
 	X, y , Xtest= load2d()  # load 2-d data
-	rtrain,rtest = nn_features(X,y,Xtest,model=build_nn5,random_state=1091,n_folds=5)
+	rtrain,rtest = nn_features(X,y,Xtest,model=build_nn6,random_state=1091,n_folds=5)
 	print 'roc auc score is %f '%(roc_auc_score(y,rtrain))
 	with open('net6.res.pickle', 'wb') as f:
 		pickle.dump((rtrain,rtest), f)
