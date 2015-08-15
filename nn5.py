@@ -162,6 +162,8 @@ class EarlyStopping(object):
 		self.Xvalid = Xvalid
 		self.yvalid = yvalid
 		self.verbose=verbose
+		if verbose:
+			print "%-7s|  %-12s|  %-12s|  %-12s| %-9s |  %-4s"%('epoch','train loss','valid loss','accuracy','roc auc','dur')
 	def __call__(self, nn, train_history):
 		ypred_valid = nn.predict_proba(self.Xvalid)
 		current_valid = roc_auc_score(self.yvalid,ypred_valid[:,1])
@@ -240,12 +242,11 @@ def nn_features(X,y,Xtest,model=build_nn5,random_state=100,n_folds=4):
 		ypred_test = None;
 		ypred_train = np.zeros(X.shape[0],);		
 		for train_index, test_index in skf:
-			seed += 11			
+			seed += 37			
 			X_train, X_test = X[train_index], X[test_index]
 			y_train, y_test = y[train_index], y[test_index]			
 			y_train = y_train.reshape(-1,)
 			nn = model()			
-			print "%-7s|  %-12s|  %-12s|  %-12s| %-9s |  %-4s"%('epoch','train loss','valid loss','accuracy','roc ','dur')
 			nn.on_epoch_finished.append(EarlyStopping(patience=100,Xvalid=X_test,yvalid=y_test,verbose=True))
 			np.random.seed(seed)
 			nn.fit(X_train,y_train)
@@ -260,7 +261,7 @@ def nn_features(X,y,Xtest,model=build_nn5,random_state=100,n_folds=4):
 if __name__ == '__main__':
 	print __file__
 	X, y , Xtest= load2d()  # load 2-d data
-	rtrain,rtest = nn_features(X,y,Xtest,model=build_nn5,random_state=291,n_folds=5)
+	rtrain,rtest = nn_features(X,y,Xtest,model=build_nn5,random_state=13,n_folds=5)
 	print 'roc auc score is %f '%(roc_auc_score(y,rtrain))
 	with open('net5.res.pickle', 'wb') as f:
 		pickle.dump((rtrain,rtest), f)
