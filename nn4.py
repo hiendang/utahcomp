@@ -125,7 +125,6 @@ def plot_weights(weights):
 	fig = pyplot.figure(figsize=(6, 6))
 	fig.subplots_adjust(
 		left=0, right=1, bottom=0, top=1, hspace=0.05, wspace=0.05)
-
 	for i in range(16):
 		ax = fig.add_subplot(4, 4, i + 1, xticks=[], yticks=[])
 		ax.imshow(weights[:, i].reshape(96, 96), cmap='gray')
@@ -136,12 +135,9 @@ class FlipBatchIterator(BatchIterator):
 		Xb, yb = super(FlipBatchIterator, self).transform(Xb, yb)
 		# Flip half of the images in this batch at random:
 		bs = Xb.shape[0]
-		indices2 = np.random.choice(bs, bs / 3, replace=False)
-		Xb[indices2] = Xb[indices2, :, :, ::-1]
-		indices3 = np.random.choice(bs, bs / 3, replace=False)
-		Xb[indices3] = Xb[indices3, :, ::-1, :]
-		return Xb, yb
-
+		Xb2 = Xb[:, :, :, ::-1]		
+		Xb3 = Xb[:, :, ::-1, :]
+		return np.vstack((Xb,Xb2,Xb3)), np.hstack((yb,yb,yb))
 
 class AdjustVariable(object):
 	def __init__(self, name, start=0.03, stop=0.001):
