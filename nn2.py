@@ -25,7 +25,7 @@ except ImportError:
 	MaxPool2DLayer = layers.MaxPool2DLayer
 
 sys.setrecursionlimit(10000)  # for pickle...
-np.random.seed(42)
+np.random.seed(192)
 
 def image_smash(filename):   # Taken an image, flatten it, and smash it
 	# This function takes an image filename, loads it into a matrix, smashes it to 1D row
@@ -85,7 +85,7 @@ def load():
 	# In[94]:
 	files_yes = glob.glob("volyes_train/*.png")
 	files_no = glob.glob("volno_train/*.png")
-	files_guess = glob.glob("unknown/*.png")
+	files_guess = sorted(glob.glob("unknown/*.png"))
 	# In[95]:
 	print "There are "+str(len(files_yes))+" yes images"
 	print "There are "+str(len(files_no))+" no images"
@@ -127,33 +127,17 @@ def plot_weights(weights):
 	pyplot.show()
 
 class FlipBatchIterator(BatchIterator):
-	#flip_indices = [
-	#	(0, 2), (1, 3),
-	#	(4, 8), (5, 9), (6, 10), (7, 11),
-	#	(12, 16), (13, 17), (14, 18), (15, 19),
-	#	(22, 24), (23, 25),
-	#	]
 	def transform(self, Xb, yb):
 		Xb, yb = super(FlipBatchIterator, self).transform(Xb, yb)
 		# Flip half of the images in this batch at random:
 		bs = Xb.shape[0]
-		indices = np.random.choice(bs, bs / 2, replace=False)
+		indices = np.random.choice(bs, bs / 3, replace=False)
 		Xb1 = Xb[indices, :, :, ::-1]
 		yb1 = yb[indices]
-		indices2 = np.random.choice(bs, bs/2, replace=False)
+		indices2 = np.random.choice(bs, bs/3, replace=False)
 		Xb2 = Xb[indices2,:,::-1,:]
 		yb2 = yb[indices2]
-		#if yb is not None:
-		#	# Horizontal flip of all x coordinates:
-		#	yb[indices, ::2] = yb[indices, ::2] * -1
-		#	# Swap places, e.g. left_eye_center_x -> right_eye_center_x
-		#	for a, b in self.flip_indices:
-		#		yb[indices, a], yb[indices, b] = (
-		#			yb[indices, b], yb[indices, a])
-		#print yb.shape,yb1.shape,yb2.shape
-		#print Xb.shape,Xb1.shape
 		return np.vstack((Xb,Xb1,Xb2)), np.hstack((yb,yb1,yb2))
-
 
 class AdjustVariable(object):
 	def __init__(self, name, start=0.03, stop=0.001):
@@ -188,35 +172,6 @@ class EarlyStopping(object):
 			nn.load_params_from(self.best_weights)
 			raise StopIteration()
 
-net2 = NeuralNet(
-	layers=[
-		('input', layers.InputLayer),
-		('conv1', layers.Conv2DLayer),
-		('pool1', layers.MaxPool2DLayer),
-		('conv2', layers.Conv2DLayer),
-		('pool2', layers.MaxPool2DLayer),
-		('conv3', layers.Conv2DLayer),
-		('pool3', layers.MaxPool2DLayer),
-		('hidden4', layers.DenseLayer),
-		('hidden5', layers.DenseLayer),
-		('output', layers.DenseLayer),
-		],
-	input_shape=(None, 1, 91, 91),
-	conv1_num_filters=32, conv1_filter_size=(3, 3), pool1_pool_size=(2, 2),
-	conv2_num_filters=64, conv2_filter_size=(2, 2), pool2_pool_size=(2, 2),
-	conv3_num_filters=128, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
-	hidden4_num_units=500, hidden5_num_units=500,
-	output_num_units=1, output_nonlinearity=None,
-
-	update_learning_rate=0.01,
-	update_momentum=0.9,
-
-	regression=True,
-	max_epochs=1000,
-	verbose=1,
-	train_split=TrainSplit(eval_size=0.2)
-	)
-
 net = NeuralNet(
 	layers=[
 		('input', layers.InputLayer),
@@ -236,37 +191,38 @@ net = NeuralNet(
 		('output', layers.DenseLayer),
 		],
 	input_shape=(None, 1, 91, 91),
-	conv1_num_filters=8, conv1_filter_size=(5, 5), pool1_pool_size=(2, 2),
-	dropout1_p=0.15,
-	conv2_num_filters=16, conv2_filter_size=(3, 3), pool2_pool_size=(2, 2),
+	conv1_num_filters=10, conv1_filter_size=(2, 2), pool1_pool_size=(2, 2),
+	dropout1_p=0.2,
+	conv2_num_filters=20, conv2_filter_size=(2, 2), pool2_pool_size=(2, 2),
 	dropout2_p=0.3,
-	conv3_num_filters=32, conv3_filter_size=(3, 3), pool3_pool_size=(2, 2),
-	dropout3_p=0.3,
+	conv3_num_filters=40, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
+	dropout3_p=0.35,
 	hidden4_num_units=200,
+	hidden4_nonlinearity=sigmoid,
 	dropout4_p=0.5,
-	hidden5_num_units=100,
-	dropout5_p=0.3,
+	hidden5_num_units=110,
+	dropout5_p=0.4,
 	output_num_units=2, output_nonlinearity=softmax,
 
-	update_learning_rate=theano.shared(float32(0.02)),
+	update_learning_rate=theano.shared(float32(0.025)),
 	update_momentum=theano.shared(float32(0.9)),
 
 	#regression=True,
 	batch_iterator_train=FlipBatchIterator(batch_size=256),
 	on_epoch_finished=[
-		AdjustVariable('update_learning_rate', start=0.02, stop=0.0001),
-		AdjustVariable('update_momentum', start=0.9, stop=0.999),
-		EarlyStopping(patience=100),
+		AdjustVariable('update_learning_rate', start=0.025, stop=0.0001),
+		AdjustVariable('update_momentum', start=0.9, stop=0.99),
+		EarlyStopping(patience=80),
 		],
-	max_epochs=2000,
+	max_epochs=1500,
 	verbose=1,
 	train_split=TrainSplit(eval_size=0.2),
 	)
 if __name__ == '__main__':
 	X, y , Xtest= load2d()  # load 2-d data
 	net.fit(X.astype(theano.config.floatX), y.astype(np.int32).reshape(-1,))
-	with open('net2v3.pickle', 'wb') as f:
+	with open('net2.pickle', 'wb') as f:
 		pickle.dump(net, f, -1)
 	ypred = net.predict(Xtest.astype(theano.config.floatX))
-	with open('net2v3.res.pkl', 'wb') as f:
+	with open('net2.res.pkl', 'wb') as f:
 		pickle.dump(ypred,f)
