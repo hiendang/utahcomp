@@ -154,7 +154,7 @@ class AdjustVariable(object):
 
 
 class EarlyStopping(object):
-	def __init__(self, patience=150,Xvalid=None,yvalid=None,verbose=True):
+	def __init__(self, patience=100,Xvalid=None,yvalid=None,verbose=True):
 		self.patience = patience
 		self.best_valid = 0
 		self.best_valid_epoch = 0
@@ -210,10 +210,10 @@ def build_nn5():
 		dropout2_p=0.3,
 		conv3_num_filters=64, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
 		dropout3_p=0.3,
-		hidden4_num_units=1000,
+		hidden4_num_units=800,
 		hidden4_nonlinearity=leaky_rectify,
 		dropout4_p=0.5,
-		hidden5_num_units=800,
+		hidden5_num_units=500,
 		dropout5_p=0.35,
 		output_num_units=2, output_nonlinearity=softmax,
 
