@@ -143,7 +143,7 @@ class FlipBatchIterator(BatchIterator):
 		return Xb,yb#np.vstack((Xb,Xb2,Xb3)), np.hstack((yb,yb,yb))
 
 class AdjustVariable(object):
-	def __init__(self, name, start=0.03, stop=0.001, duration=500):
+	def __init__(self, name, start=0.03, stop=0.001, duration=700):
 		self.name = name
 		self.start, self.stop = start, stop
 		self.duration = duration
@@ -152,7 +152,7 @@ class AdjustVariable(object):
 		#if self.ls is None:
 		#	self.ls = np.linspace(self.start, self.stop, nn.max_epochs)
 		epoch = train_history[-1]['epoch']
-		new_value = np.cast['float32'](self.ls[epoch - 1])
+		new_value = np.cast['float32'](min(self.duration-1,self.ls[epoch - 1]))
 		getattr(nn, self.name).set_value(new_value)
 
 
@@ -211,17 +211,17 @@ def build_nn5():
 			],
 		input_shape=(None, 1, 91, 91),
 		conv1_num_filters=16, conv1_filter_size=(3, 3), pool1_pool_size=(2, 2),
-		dropout1_p=0.2,
+		dropout1_p=0.25,
 		conv2_num_filters=32, conv2_filter_size=(3, 3), pool2_pool_size=(2, 2),
-		dropout2_p=0.3,
+		dropout2_p=0.35,
 		conv3_num_filters=64, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
 		dropout3_p=0.45,
-		hidden4_num_units=400,
+		hidden4_num_units=300,
 		hidden4_nonlinearity=leaky_rectify,
 		dropout4_p=0.5,
 		hidden5_num_units=250,
 		hidden5_nonlinearity=sigmoid,
-		dropout5_p=0.4,
+		dropout5_p=0.5,
 		hidden6_num_units=150,
 		dropout6_p=0.3,
 		output_num_units=2, output_nonlinearity=softmax,
@@ -233,7 +233,7 @@ def build_nn5():
 		batch_iterator_train=FlipBatchIterator(batch_size=128),
 		on_epoch_finished=[
 			AdjustVariable('update_learning_rate', start=0.02, stop=0.0001),
-			AdjustVariable('update_momentum', start=0.9, stop=0.999),			
+			AdjustVariable('update_momentum', start=0.9, stop=0.999),
 			],
 		max_epochs=1500,
 		verbose=0,
