@@ -152,7 +152,7 @@ class AdjustVariable(object):
 		#if self.ls is None:
 		#	self.ls = np.linspace(self.start, self.stop, nn.max_epochs)
 		epoch = train_history[-1]['epoch']
-		new_value = np.cast['float32'](min(self.duration-1,self.ls[epoch - 1]))
+		new_value = np.cast['float32'](self.ls[min(self.duration,epoch)-1])
 		getattr(nn, self.name).set_value(new_value)
 
 
@@ -217,10 +217,10 @@ def build_nn5():
 		conv3_num_filters=64, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
 		dropout3_p=0.45,
 		hidden4_num_units=300,
-		hidden4_nonlinearity=leaky_rectify,
+		hidden4_nonlinearity=very_leaky_rectify,
 		dropout4_p=0.5,
 		hidden5_num_units=250,
-		hidden5_nonlinearity=sigmoid,
+		hidden5_nonlinearity=leaky_rectify,
 		dropout5_p=0.5,
 		hidden6_num_units=150,
 		dropout6_p=0.3,
@@ -270,7 +270,7 @@ def nn_features(X,y,Xtest,model=build_nn5,random_state=100,n_folds=4):
 if __name__ == '__main__':
 	print __file__
 	X, y , Xtest= load2d()  # load 2-d data
-	rtrain,rtest = nn_features(X,y,Xtest,model=build_nn5,random_state=3,n_folds=5)
+	rtrain,rtest = nn_features(X,y,Xtest,model=build_nn5,random_state=3000,n_folds=5)
 	print 'roc auc score is %f '%(roc_auc_score(y,rtrain))
 	with open('net8.res.pickle', 'wb') as f:
 		pickle.dump((rtrain,rtest), f)
