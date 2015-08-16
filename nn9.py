@@ -31,7 +31,7 @@ except ImportError:
 	MaxPool2DLayer = layers.MaxPool2DLayer
 
 sys.setrecursionlimit(10000)  # for pickle...
-np.random.seed(101)
+np.random.seed(191)
 
 def image_smash(filename):   # Taken an image, flatten it, and smash it
 	# This function takes an image filename, loads it into a matrix, smashes it to 1D row
@@ -270,7 +270,7 @@ def nn_features(X,y,Xtest,model=build_nn5,random_state=100,n_folds=4):
 if __name__ == '__main__':
 	print __file__
 	X, y , Xtest= load2d()  # load 2-d data
-	rtrain,rtest = nn_features(X,y,Xtest,model=build_nn5,random_state=201,n_folds=5)
+	rtrain,rtest = nn_features(X,y,Xtest,model=build_nn5,random_state=20144,n_folds=5)
 	print 'roc auc score is %f '%(roc_auc_score(y,rtrain))
 	with open('net9.res.pickle', 'wb') as f:
 		pickle.dump((rtrain,rtest), f)
