@@ -143,7 +143,7 @@ class FlipBatchIterator(BatchIterator):
 		return Xb,yb#np.vstack((Xb,Xb2,Xb3)), np.hstack((yb,yb,yb))
 
 class AdjustVariable(object):
-	def __init__(self, name, start=0.03, stop=0.001,duration=500):
+	def __init__(self, name, start=0.03, stop=0.001,duration=600):
 		self.name = name
 		self.start, self.stop = start, stop
 		self.duration = duration
@@ -152,7 +152,7 @@ class AdjustVariable(object):
 		#if self.ls is None:
 		#	self.ls = np.linspace(self.start, self.stop, nn.max_epochs)
 		epoch = train_history[-1]['epoch']
-		new_value = np.cast['float32'](min(self.duration-1,self.ls[epoch - 1]))
+		new_value = np.cast['float32'](self.ls[min(self.duration,epoch) - 1])
 		getattr(nn, self.name).set_value(new_value)
 
 
@@ -234,7 +234,7 @@ def build_nn5():
 		batch_iterator_train=FlipBatchIterator(batch_size=128),
 		on_epoch_finished=[
 			AdjustVariable('update_learning_rate', start=0.03, stop=0.0001),
-			AdjustVariable('update_momentum', start=0.9, stop=0.999),			
+			AdjustVariable('update_momentum', start=0.9, stop=0.99),
 			],
 		max_epochs=2000,
 		verbose=0,
