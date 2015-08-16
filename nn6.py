@@ -31,7 +31,7 @@ except ImportError:
 	MaxPool2DLayer = layers.MaxPool2DLayer
 
 sys.setrecursionlimit(10000)  # for pickle...
-np.random.seed(917)
+np.random.seed(17)
 
 def image_smash(filename):   # Taken an image, flatten it, and smash it
 	# This function takes an image filename, loads it into a matrix, smashes it to 1D row
@@ -136,18 +136,22 @@ class FlipBatchIterator(BatchIterator):
 		Xb, yb = super(FlipBatchIterator, self).transform(Xb, yb)
 		# Flip half of the images in this batch at random:
 		bs = Xb.shape[0]
-		Xb2 = Xb[:, :, :, ::-1]		
-		Xb3 = Xb[:, :, ::-1, :]
-		return np.vstack((Xb,Xb2,Xb3)), np.hstack((yb,yb,yb))
+		indices =np.random.choice(bs,bs/2,replace=False)
+		Xb[indices] = Xb[indices, :, :, ::-1]		
+		indices = np.random.choice(bs,bs/3,replace=False)
+		Xb[indices] = Xb[indices, :, ::-1, :]
+		return Xb,yb#np.vstack((Xb,Xb2,Xb3)), np.hstack((yb,yb,yb))
 
 class AdjustVariable(object):
-	def __init__(self, name, start=0.03, stop=0.001):
+	def __init__(self, name, start=0.03, stop=0.001, duration=1000):
 		self.name = name
 		self.start, self.stop = start, stop
 		self.ls = None
+		if duration > 0:
+			self.ls = np.linspace(self.start,self.stop,duration)
 	def __call__(self, nn, train_history):
-		if self.ls is None:
-			self.ls = np.linspace(self.start, self.stop, nn.max_epochs)
+		#if self.ls is None:
+		#	self.ls = np.linspace(self.start, self.stop, nn.max_epochs)
 		epoch = train_history[-1]['epoch']
 		new_value = np.cast['float32'](self.ls[epoch - 1])
 		getattr(nn, self.name).set_value(new_value)
@@ -201,24 +205,25 @@ def build_nn6():
 			('dropout4', layers.DropoutLayer),
 			('hidden5', layers.DenseLayer),
 			('dropout5',layers.DropoutLayer),
-			('hidden6', layers.DenseLayer),
-			('dropout6',layers.DropoutLayer),
+			#('hidden6', layers.DenseLayer),
+			#('dropout6',layers.DropoutLayer),
 			('output', layers.DenseLayer),
 			],
 		input_shape=(None, 1, 91, 91),
-		conv1_num_filters=6, conv1_filter_size=(2, 2), pool1_pool_size=(2, 2),
-		dropout1_p=0.15,
-		conv2_num_filters=12, conv2_filter_size=(2, 2), pool2_pool_size=(2, 2),
-		dropout2_p=0.25,
-		conv3_num_filters=24, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
-		dropout3_p=0.35,
-		hidden4_num_units=200,
-		hidden4_nonlinearity=very_leaky_rectify,
+		conv1_num_filters=16, conv1_filter_size=(3, 3), pool1_pool_size=(2, 2),
+		dropout1_p=0.2,
+		conv2_num_filters=16, conv2_filter_size=(3, 3), pool2_pool_size=(2, 2),
+		dropout2_p=0.3,
+		conv3_num_filters=16, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
+		dropout3_p=0.4,
+		hidden4_num_units=240,
+		hidden4_nonlinearity=leaky_rectify,
 		dropout4_p=0.5,
-		hidden5_num_units=150,
+		hidden5_num_units=170,
+		hidden5_nonlinearity=leaky_rectify,
 		dropout5_p=0.4,
 		hidden6_num_units=100,
-		dropout6_p=0.25,
+		dropout6_p=0.3,
 		output_num_units=2, output_nonlinearity=softmax,
 
 		update_learning_rate=theano.shared(float32(0.025)),
@@ -227,8 +232,8 @@ def build_nn6():
 	#	regression=True,
 		batch_iterator_train=FlipBatchIterator(batch_size=128),
 		on_epoch_finished=[
-			AdjustVariable('update_learning_rate', start=0.025, stop=0.0001),
-			AdjustVariable('update_momentum', start=0.9, stop=0.999),			
+			AdjustVariable('update_learning_rate', start=0.03, stop=0.0001,duration=500),
+			AdjustVariable('update_momentum', start=0.9, stop=0.999,duration=800),			
 			],
 		max_epochs=1500,
 		verbose=0,

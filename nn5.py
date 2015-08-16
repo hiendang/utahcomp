@@ -136,9 +136,11 @@ class FlipBatchIterator(BatchIterator):
 		Xb, yb = super(FlipBatchIterator, self).transform(Xb, yb)
 		# Flip half of the images in this batch at random:
 		bs = Xb.shape[0]
-		Xb2 = Xb[:, :, :, ::-1]		
-		Xb3 = Xb[:, :, ::-1, :]
-		return np.vstack((Xb,Xb2,Xb3)), np.hstack((yb,yb,yb))
+		indices = np.random.choice(bs, bs / 3, replace=False)
+		Xb[indices] = Xb[indices, :, :, ::-1]		
+		indices = np.random.choice(bs, bs / 3, replace=False)
+		Xb[indices] = Xb[indices, :, ::-1, :]
+		return Xb,yb#np.vstack((Xb,Xb2,Xb3)), np.hstack((yb,yb,yb))
 
 class AdjustVariable(object):
 	def __init__(self, name, start=0.03, stop=0.001):
@@ -205,25 +207,25 @@ def build_nn5():
 			],
 		input_shape=(None, 1, 91, 91),
 		conv1_num_filters=16, conv1_filter_size=(3, 3), pool1_pool_size=(2, 2),
-		dropout1_p=0.2,
-		conv2_num_filters=32, conv2_filter_size=(3, 3), pool2_pool_size=(2, 2),
-		dropout2_p=0.3,
-		conv3_num_filters=64, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
-		dropout3_p=0.3,
-		hidden4_num_units=800,
+		dropout1_p=0.3,
+		conv2_num_filters=32, conv2_filter_size=(2, 2), pool2_pool_size=(2, 2),
+		dropout2_p=0.4,
+		conv3_num_filters=32, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
+		dropout3_p=0.5,
+		hidden4_num_units=250,
 		hidden4_nonlinearity=leaky_rectify,
 		dropout4_p=0.5,
-		hidden5_num_units=500,
-		dropout5_p=0.35,
+		hidden5_num_units=150,
+		dropout5_p=0.4,
 		output_num_units=2, output_nonlinearity=softmax,
 
-		update_learning_rate=theano.shared(float32(0.025)),
+		update_learning_rate=theano.shared(float32(0.015)),
 		update_momentum=theano.shared(float32(0.9)),
 
 	#	regression=True,
 		batch_iterator_train=FlipBatchIterator(batch_size=128),
 		on_epoch_finished=[
-			AdjustVariable('update_learning_rate', start=0.025, stop=0.0001),
+			AdjustVariable('update_learning_rate', start=0.015, stop=0.0001),
 			AdjustVariable('update_momentum', start=0.9, stop=0.999),			
 			],
 		max_epochs=2000,
