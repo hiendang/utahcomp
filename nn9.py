@@ -31,7 +31,7 @@ except ImportError:
 	MaxPool2DLayer = layers.MaxPool2DLayer
 
 sys.setrecursionlimit(10000)  # for pickle...
-np.random.seed(2)
+np.random.seed(191)
 
 def image_smash(filename):   # Taken an image, flatten it, and smash it
 	# This function takes an image filename, loads it into a matrix, smashes it to 1D row
@@ -143,22 +143,23 @@ class FlipBatchIterator(BatchIterator):
 		return Xb,yb#np.vstack((Xb,Xb2,Xb3)), np.hstack((yb,yb,yb))
 
 class AdjustVariable(object):
-	def __init__(self, name, start=0.03, stop=0.001):
+	def __init__(self, name, start=0.03, stop=0.001,duration=600):
 		self.name = name
 		self.start, self.stop = start, stop
-		self.ls = None
+		self.duration = duration
+		self.ls = np.linspace(self.start, self.stop, duration)
 	def __call__(self, nn, train_history):
-		if self.ls is None:
-			self.ls = np.linspace(self.start, self.stop, nn.max_epochs)
+		#if self.ls is None:
+		#	self.ls = np.linspace(self.start, self.stop, nn.max_epochs)
 		epoch = train_history[-1]['epoch']
-		new_value = np.cast['float32'](self.ls[epoch - 1])
+		new_value = np.cast['float32'](self.ls[min(self.duration,epoch) - 1])
 		getattr(nn, self.name).set_value(new_value)
 
 
 class EarlyStopping(object):
 	def __init__(self, patience=100,Xvalid=None,yvalid=None,verbose=True):
 		self.patience = patience
-		self.best_valid = 0
+		self.best_valid = np.inf
 		self.best_valid_epoch = 0
 		self.best_weights = None
 		self.Xvalid = Xvalid
@@ -168,13 +169,20 @@ class EarlyStopping(object):
 			print "%-7s|  %-12s|  %-12s|  %-12s| %-9s |  %-4s"%('epoch','train loss','valid loss','accuracy','roc auc','dur')
 	def __call__(self, nn, train_history):
 		ypred_valid = nn.predict_proba(self.Xvalid)
-		current_valid = roc_auc_score(self.yvalid,ypred_valid[:,1])
+		valid_roc = roc_auc_score(self.yvalid,ypred_valid[:,1])
 		current_epoch = train_history[-1]['epoch']
 		valid_log_loss = log_loss(self.yvalid,ypred_valid)
 		valid_acc = accuracy_score(self.yvalid, np.argmax(ypred_valid,axis=1))
-		if self.verbose:			
-			print "%04d   |   %5f   |   %5f   |   %5f   |  %5f  | %4.2f"%(current_epoch,train_history[-1]['train_loss'],valid_log_loss,valid_acc,current_valid,train_history[-1]['dur'])
-		if current_valid > self.best_valid:
+		current_valid = valid_log_loss
+		best_iter= ''
+		if current_valid < self.best_valid:
+			self.best_valid = current_valid
+			self.best_valid_epoch = current_epoch
+			self.best_weights = nn.get_all_params_values()
+			best_iter=' **'
+		if self.verbose:
+			print "%04d   |   %5f   |   %5f   |   %5f   |  %5f  | %4.2f  %s"%(current_epoch,train_history[-1]['train_loss'],valid_log_loss,valid_acc,valid_roc,train_history[-1]['dur'],best_iter)
+		if current_valid < self.best_valid:
 			self.best_valid = current_valid
 			self.best_valid_epoch = current_epoch
 			self.best_weights = nn.get_all_params_values()
@@ -210,23 +218,23 @@ def build_nn5():
 		dropout1_p=0.3,
 		conv2_num_filters=32, conv2_filter_size=(2, 2), pool2_pool_size=(2, 2),
 		dropout2_p=0.4,
-		conv3_num_filters=32, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
+		conv3_num_filters=64, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
 		dropout3_p=0.5,
-		hidden4_num_units=250,
-		hidden4_nonlinearity=leaky_rectify,
+		hidden4_num_units=300,
+		hidden4_nonlinearity=very_leaky_rectify,
 		dropout4_p=0.5,
-		hidden5_num_units=150,
-		dropout5_p=0.4,
+		hidden5_num_units=200,
+		dropout5_p=0.5,
 		output_num_units=2, output_nonlinearity=softmax,
 
-		update_learning_rate=theano.shared(float32(0.015)),
+		update_learning_rate=theano.shared(float32(0.03)),
 		update_momentum=theano.shared(float32(0.9)),
 
 	#	regression=True,
 		batch_iterator_train=FlipBatchIterator(batch_size=128),
 		on_epoch_finished=[
-			AdjustVariable('update_learning_rate', start=0.015, stop=0.0001),
-			AdjustVariable('update_momentum', start=0.9, stop=0.999),			
+			AdjustVariable('update_learning_rate', start=0.03, stop=0.0001),
+			AdjustVariable('update_momentum', start=0.9, stop=0.99),
 			],
 		max_epochs=2000,
 		verbose=0,
@@ -263,8 +271,8 @@ def nn_features(X,y,Xtest,model=build_nn5,random_state=100,n_folds=4):
 if __name__ == '__main__':
 	print __file__
 	X, y , Xtest= load2d()  # load 2-d data
-	rtrain,rtest = nn_features(X,y,Xtest,model=build_nn5,random_state=2,n_folds=5)
+	rtrain,rtest = nn_features(X,y,Xtest,model=build_nn5,random_state=20144,n_folds=5)
 	print 'roc auc score is %f '%(roc_auc_score(y,rtrain))
-	with open('net5.res.pickle', 'wb') as f:
+	with open('net9.res.pickle', 'wb') as f:
 		pickle.dump((rtrain,rtest), f)
 	
