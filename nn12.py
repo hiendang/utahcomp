@@ -29,9 +29,11 @@ from sklearn.utils import shuffle
 try:
 	from lasagne.layers.cuda_convnet import Conv2DCCLayer as Conv2DLayer
 	from lasagne.layers.cuda_convnet import MaxPool2DCCLayer as MaxPool2DLayer
+	print '[LOG] using cuda convnet'
 except ImportError:
 	Conv2DLayer = layers.Conv2DLayer
 	MaxPool2DLayer = layers.MaxPool2DLayer
+	print '[LOG] cannot load cuda convnet'
 
 sys.setrecursionlimit(10000)  # for pickle...
 from rotation import *
@@ -128,7 +130,7 @@ class FlipBatchIterator(BatchIterator):
 		#Xb = flip_func[flip_func_id](Xb)
 		bs = Xb.shape[0]		
 		indices =np.random.choice(bs,bs/2,replace=False)
-		Xb[indices] = flip_func[flip_func_id](Xb[indices, :, :, :])
+		Xb[indices] = flip_func[flip_func_id](Xb[indices, :, :, ::-1])
 		#indices =np.random.choice(bs,bs/3,replace=False)
 		#Xb[indices] = Xb[indices, :, ::-1, :]
 		return Xb,yb
@@ -195,12 +197,12 @@ def build_nn4():
 			('output', layers.DenseLayer),
 			],
 		input_shape=(None, 1, 91, 91),
-		conv1_num_filters=4, conv1_filter_size=(3, 3), pool1_pool_size=(2, 2),
-		dropout1_p=0.25,
-		conv2_num_filters=8, conv2_filter_size=(3, 3), pool2_pool_size=(2, 2),
-		dropout2_p=0.3,
+		conv1_num_filters=16, conv1_filter_size=(3, 3), pool1_pool_size=(2, 2),
+		dropout1_p=0.3,
+		conv2_num_filters=16, conv2_filter_size=(3, 3), pool2_pool_size=(2, 2),
+		dropout2_p=0.4,
 		conv3_num_filters=16, conv3_filter_size=(2, 2), pool3_pool_size=(2, 2),
-		dropout3_p=0.35,
+		dropout3_p=0.5,
 		hidden4_num_units=210,
 		hidden4_nonlinearity=leaky_rectify,
 		dropout4_p=0.5,
@@ -262,10 +264,10 @@ if __name__ == '__main__':
 		X = array_tf_90(X)
 		Xtest = array_tf_90(Xtest)
 		rtrain,rtest = nn_features(X,y,Xtest,model=build_nn4,random_state=np.random.randint(10000),n_folds=5)
-		rfile = 'net11.res.rotated.%d.pkl'%i
+		rfile = 'net12.res.rotated.%d.pkl'%i
 		with open(rfile,'wb') as f:
 			pickle.dump((rtrain,rtest), f)
-		if i == 0:
+		if i == 0 :
 			rtrain_total = rtrain
 			rtest_total = rtest
 		else:
@@ -273,6 +275,6 @@ if __name__ == '__main__':
 			rtest_total += rtest
 	
 	print 'roc auc score is %f '%(roc_auc_score(y,rtrain))
-	with open('net11.res.pickle', 'wb') as f:
+	with open('net12.res.pickle', 'wb') as f:
 		pickle.dump((rtrain_total,rtest_total), f)
 	
