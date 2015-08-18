@@ -36,7 +36,7 @@ except ImportError:
 sys.setrecursionlimit(10000)  # for pickle...
 from rotation import *
 flip_func = [array_tf_0f,array_tf_90f,array_tf_180f,array_tf_270f]
-
+rotate_func = [array_tf_0,array_tf_90,array_tf_180,array_tf_270]
 def image_smash(filename):   # Taken an image, flatten it, and smash it
 	# This function takes an image filename, loads it into a matrix, smashes it to 1D row
 	data=misc.imread(filename,flatten=True)
@@ -53,14 +53,12 @@ def smash_stack(file_list):
 		structured_image_matrix[row,:]=image_smash(file_list[row])
 	return structured_image_matrix
 
-
 # In[108]:
 
 def dlProgress(count, blockSize, totalSize):
 	percent = int(count*blockSize*100/totalSize)
 	sys.stdout.write("\r mars_comp.tar.gz:%d%% complete" % percent)
 	sys.stdout.flush()
-
 
 # In[109]:
 
@@ -108,6 +106,7 @@ def load():
 	X = np.vstack((X_yes,X_no))											  #features for training
 	y = np.vstack((np.ones((X_yes.shape[0],1)),np.zeros((X_no.shape[0],1)))) #labels for training
 	y = y.reshape(-1,)	
+	X,y = shuffle(X,y,random_state=911)
 	X = X/255.
 	X_unknown = X_unknown/255.
 	return X,y,X_unknown
@@ -126,13 +125,13 @@ class FlipBatchIterator(BatchIterator):
 		Xb, yb = super(FlipBatchIterator, self).transform(Xb, yb)
 		# Flip half of the images in this batch at random:
 		flip_func_id = np.random.randint(len(flip_func))
-		Xb = flip_func[flip_func_id](Xb)
+		#Xb = flip_func[flip_func_id](Xb)
 		#bs = Xb.shape[0]		
-		#indices =np.random.choice(bs,bs/2,replace=False)
-		#Xb[indices] = Xb[indices, :, :, ::-1]
+		indices =np.random.choice(bs,bs/2,replace=False)
+		Xb[indices] = flip_func[flip_func_id](Xb[indices, :, :, ::-1])
 		#indices =np.random.choice(bs,bs/3,replace=False)
 		#Xb[indices] = Xb[indices, :, ::-1, :]
-		return Xb,yb#np.vstack((Xb,Xb2,Xb3)), np.hstack((yb,yb,yb))
+		return Xb,yb
 
 class AdjustVariable(object):
 	def __init__(self, name, start=0.03, stop=0.001):
@@ -225,7 +224,6 @@ def build_nn4():
 	return net
 
 def nn_features(X,y,Xtest,model=build_nn4,random_state=100,n_folds=4):
-	seed = random_state	
 	from lasagne.layers import noise
 	from theano.sandbox.rng_mrg import MRG_RandomStreams
 	noise._srng =MRG_RandomStreams(seed=random_state)
@@ -234,14 +232,12 @@ def nn_features(X,y,Xtest,model=build_nn4,random_state=100,n_folds=4):
 		ypred_test = None;
 		ypred_train = np.zeros(X.shape[0],);		
 		for train_index, test_index in skf:
-			seed += 11			
 			X_train, X_test = X[train_index], X[test_index]
 			y_train, y_test = y[train_index], y[test_index]			
 			y_train = y_train.reshape(-1,)
 			nn = model()			
 			print "%-7s|  %-12s|  %-12s|  %-12s| %-9s |  %-4s"%('epoch','train loss','valid loss','accuracy','roc ','dur')
 			nn.on_epoch_finished.append(EarlyStopping(patience=150,Xvalid=X_test,yvalid=y_test,verbose=True))
-			np.random.seed(seed)
 			nn.fit(X_train,y_train)
 			ypred = nn.predict_proba(Xtest)[:,1]
 			ypred_valid = nn.predict_proba(X_test)[:,1]
@@ -254,7 +250,7 @@ def nn_features(X,y,Xtest,model=build_nn4,random_state=100,n_folds=4):
 if __name__ == '__main__':
 	random_state=1
 	if len(sys.argv) < 2:
-		print '[Log] no random_seed is given -> use 1'
+		print '[LOG] no random_seed is given -> use 1'
 	else:
 		random_state=int(sys.argv[1])
 		print '[LOG] using %d as random seed'%random_state
@@ -277,6 +273,6 @@ if __name__ == '__main__':
 			rtest_total += rtest
 	
 	print 'roc auc score is %f '%(roc_auc_score(y,rtrain))
-	with open('net8.res.pickle', 'wb') as f:
+	with open('net11.res.pickle', 'wb') as f:
 		pickle.dump((rtrain_total,rtest_total), f)
 	
