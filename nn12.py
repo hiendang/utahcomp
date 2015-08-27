@@ -239,7 +239,7 @@ def nn_features(X,y,Xtest,model=build_nn4,random_state=100,n_folds=4):
 			y_train = y_train.reshape(-1,)
 			nn = model()			
 			print "%-7s|  %-12s|  %-12s|  %-12s| %-9s |  %-4s"%('epoch','train loss','valid loss','accuracy','roc ','dur')
-			nn.on_epoch_finished.append(EarlyStopping(patience=150,Xvalid=X_test,yvalid=y_test,verbose=True))
+			nn.on_epoch_finished.append(EarlyStopping(patience=50,Xvalid=X_test,yvalid=y_test,verbose=True))
 			nn.fit(X_train,y_train)
 			ypred = nn.predict_proba(Xtest)[:,1]
 			ypred_valid = nn.predict_proba(X_test)[:,1]

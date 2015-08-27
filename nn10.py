@@ -262,6 +262,6 @@ if __name__ == '__main__':
 	X, y , Xtest= load2d()  # load 2-d data
 	rtrain,rtest = nn_features(X,y,Xtest,model=build_nn4,random_state=800,n_folds=5)
 	print 'roc auc score is %f '%(roc_auc_score(y,rtrain))
-	with open('net8.res.pickle', 'wb') as f:
-		pickle.dump((rtrain,rtest), f)
+	#with open('net8.res.pickle', 'wb') as f:
+	#	pickle.dump((rtrain,rtest), f)
 	
