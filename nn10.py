@@ -25,9 +25,11 @@ from sklearn.utils import shuffle
 try:
 	from lasagne.layers.cuda_convnet import Conv2DCCLayer as Conv2DLayer
 	from lasagne.layers.cuda_convnet import MaxPool2DCCLayer as MaxPool2DLayer
+	print('successful imported cuda convnet layer')
 except ImportError:
 	Conv2DLayer = layers.Conv2DLayer
 	MaxPool2DLayer = layers.MaxPool2DLayer
+	print('cannot using cuda convnet')
 
 sys.setrecursionlimit(10000)  # for pickle...
 np.random.seed(42223)
